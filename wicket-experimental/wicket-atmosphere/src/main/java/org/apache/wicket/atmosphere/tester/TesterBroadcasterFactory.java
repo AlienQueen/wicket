@@ -23,26 +23,20 @@ import org.atmosphere.cpr.DefaultBroadcasterFactory;
 import org.atmosphere.util.SimpleBroadcaster;
 
 /**
-*
-*/
-class TesterBroadcasterFactory extends DefaultBroadcasterFactory
-{
+ *
+ */
+class TesterBroadcasterFactory extends DefaultBroadcasterFactory {
 	private final TesterBroadcaster singleBroadcaster;
 
-	TesterBroadcasterFactory(AtmosphereConfig c, TesterBroadcaster broadcaster)
-	{
-		super(SimpleBroadcaster.class, BroadcasterLifeCyclePolicy.ATMOSPHERE_RESOURCE_POLICY.NEVER.name(), c);
+	TesterBroadcasterFactory(AtmosphereConfig c, TesterBroadcaster broadcaster) {
+		configure(SimpleBroadcaster.class, BroadcasterLifeCyclePolicy.ATMOSPHERE_RESOURCE_POLICY.NEVER.name(), c);
 
 		this.singleBroadcaster = broadcaster;
-
-		// expose myself as BroadcasterFactory.getDefault();
-		factory = this;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T extends Broadcaster> T lookup(Class<T> c, Object id, boolean createIfNull, boolean unique)
-	{
+	public <T extends Broadcaster> T lookup(Class<T> c, Object id, boolean createIfNull, boolean unique) {
 		return (T) singleBroadcaster;
 	}
 }

@@ -15,31 +15,30 @@
  * limitations under the License.
  */
 
-;(function($) {
-	'use strict';
+'use strict';
 
-	$.fn.wicketAtmosphere = function(params) {
-		var callbackAdded = false;
+window.wicketAtmosphere = function (params) {
+    var callbackAdded = false;
 
-		// jquery.atmosphere.response
-		function callback(response) {
+    // jquery.atmosphere.response
+    function callback(response) {
 
-			if (response.transport !== 'polling' && response.state === 'messageReceived') {
-				$.atmosphere.log('info', [ "response.responseBody: " + response.responseBody ]);
-				if (response.status === 200) {
-					Wicket.Ajax.process(response.responseBody);
-				}
-			} else if (response.state === "opening") {
-			}
-		}
+        if (response.transport !== 'polling' && response.state === 'messageReceived') {
+            console.log(response.responseBody);
+            if (response.status === 200) {
+                Wicket.Ajax.process(response.responseBody);
+            }
+        } else if (response.state === "opening") {
+            console.log("opening");
+        }
+    }
 
-		var connectedEndpoint = $.atmosphere.subscribe(params.url,
-				!callbackAdded ? callback : null, $.atmosphere.request = params);
-		callbackAdded = true;
+    var connectedEndpoint = atmosphere.subscribe(params.url,
+        !callbackAdded ? callback : null, atmosphere.request = params);
+    callbackAdded = true;
 
-		$(window).on("beforeunload", function() {
-			callbackAdded = false;
-			$.atmosphere.unsubscribe();
-		});
-	};
-}(jQuery));
+    window.onbeforeunload = function () {
+        callbackAdded = false;
+        atmosphere.unsubscribe();
+    };
+};

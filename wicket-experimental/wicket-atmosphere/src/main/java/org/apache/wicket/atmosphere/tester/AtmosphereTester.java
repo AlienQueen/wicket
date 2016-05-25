@@ -16,8 +16,6 @@
  */
 package org.apache.wicket.atmosphere.tester;
 
-import java.util.List;
-
 import org.apache.wicket.Page;
 import org.apache.wicket.atmosphere.AtmosphereBehavior;
 import org.apache.wicket.atmosphere.EventBus;
@@ -26,14 +24,21 @@ import org.apache.wicket.protocol.http.mock.MockHttpServletResponse;
 import org.apache.wicket.util.tester.WicketTester;
 import org.atmosphere.cpr.AtmosphereConfig;
 import org.atmosphere.cpr.AtmosphereFramework;
+import org.atmosphere.cpr.AtmosphereRequest;
+import org.atmosphere.cpr.AtmosphereRequestImpl;
 import org.atmosphere.cpr.AtmosphereResource;
+import org.atmosphere.cpr.AtmosphereResourceImpl;
+import org.atmosphere.cpr.AtmosphereResponse;
+import org.atmosphere.cpr.AtmosphereResponseImpl;
 import org.atmosphere.cpr.HeaderConfig;
+import org.atmosphere.handler.AtmosphereHandlerAdapter;
+
+import java.util.List;
 
 /**
  * A helper for testing Atmosphere enabled pages
  */
-public class AtmosphereTester
-{
+public class AtmosphereTester {
 	/**
 	 * The EventBus that will be used to post/push messages
 	 * to the suspended http response
@@ -41,7 +46,7 @@ public class AtmosphereTester
 	private final EventBus eventBus;
 
 	private final WicketTester wicketTester;
-	
+
 	/**
 	 * The response which will be suspended by Atmosphere and
 	 * all pushes/post will go to
@@ -49,38 +54,32 @@ public class AtmosphereTester
 	private MockHttpServletResponse suspendedResponse;
 
 	private MockHttpServletResponse lastResponse;
-	
+
 	/**
 	 * Constructor.
 	 *
-	 * @param wicketTester
-	 *          The testing helper
-	 * @param page
-	 *          The page to test
+	 * @param wicketTester The testing helper
+	 * @param page         The page to test
 	 */
-	public AtmosphereTester(final WicketTester wicketTester, Page page)
-	{
+	public AtmosphereTester(final WicketTester wicketTester, Page page) {
 		this.wicketTester = wicketTester;
 
 		WebApplication application = wicketTester.getApplication();
 
 		TesterBroadcaster broadcaster = createBroadcaster();
 
-		if (EventBus.isInstalled(application))
-		{
+		if (EventBus.isInstalled(application)) {
 			this.eventBus = EventBus.get(application);
 			this.eventBus.setBroadcaster(broadcaster);
-		}
-		else
-		{
+		} else {
 			this.eventBus = new EventBus(application, broadcaster);
 		}
 
+		this.eventBus.setWaTester(this);
 		initialize(wicketTester, page);
 	}
 
-	private void initialize(final WicketTester wicketTester, Page page)
-	{
+	private void initialize(final WicketTester wicketTester, Page page) {
 		// remove any already installed AtmosphereBehaviors on the page
 		List<AtmosphereBehavior> behaviors = page.getBehaviors(AtmosphereBehavior.class);
 		page.remove(behaviors.toArray(new AtmosphereBehavior[behaviors.size()]));
@@ -88,6 +87,21 @@ public class AtmosphereTester
 		// install AtmosphereBehavior that doesn't use Meteor
 		AtmosphereBehavior atmosphereBehavior = new TesterAtmosphereBehavior(wicketTester, eventBus);
 		page.add(atmosphereBehavior);
+
+		TesterBroadcaster broadcaster = (TesterBroadcaster) this.eventBus.getBroadcaster();
+
+		AtmosphereResource atmosphereResource = new AtmosphereResourceImpl();
+		AtmosphereRequest atmosphereRequest = new AtmosphereRequestImpl.Builder().request(wicketTester.getRequest()).build();
+		AtmosphereResponse atmosphereResponse = new AtmosphereResponseImpl.Builder().response(wicketTester.getResponse()).build();
+		TesterAsyncSupport asyncSupport = new TesterAsyncSupport();
+		atmosphereResource.initialize(broadcaster.getApplicationConfig(), broadcaster, atmosphereRequest, atmosphereResponse,
+				asyncSupport, new AtmosphereHandlerAdapter());
+
+		atmosphereResource.setBroadcaster(broadcaster);
+		broadcaster.addAtmosphereResource(atmosphereResource);
+
+		String uuid = atmosphereResource.uuid();
+		this.eventBus.registerPage(uuid, page);
 
 		// start the page to collect all @Subscribe methods in the component hierarchy
 		wicketTester.startPage(page);
@@ -100,12 +114,11 @@ public class AtmosphereTester
 		wicketTester.executeBehavior(atmosphereBehavior);
 	}
 
-	private TesterBroadcaster createBroadcaster()
-	{
+	private TesterBroadcaster createBroadcaster() {
 		TesterBroadcaster broadcaster = new TesterBroadcaster();
 
 		AtmosphereFramework framework = new AtmosphereFramework();
-		AtmosphereConfig config = new AtmosphereConfig(framework);
+		AtmosphereConfig config = framework.getAtmosphereConfig();
 
 		TesterBroadcasterFactory broadcasterFactory = new TesterBroadcasterFactory(config, broadcaster);
 		framework.setBroadcasterFactory(broadcasterFactory);
@@ -118,19 +131,17 @@ public class AtmosphereTester
 	/**
 	 * @return The collected so far pushed data in the suspended response
 	 */
-	public String getPushedResponse()
-	{
+	public String getPushedResponse() {
 		return suspendedResponse != null ? suspendedResponse.getDocument() : null;
 	}
 
 	/**
 	 * Resets the suspended response to be empty
+	 *
 	 * @return this instance, for chaining
 	 */
-	public AtmosphereTester resetResponse()
-	{
-		if (suspendedResponse != null)
-		{
+	public AtmosphereTester resetResponse() {
+		if (suspendedResponse != null) {
 			suspendedResponse.reset();
 		}
 		return this;
@@ -139,27 +150,28 @@ public class AtmosphereTester
 	/**
 	 * Posts a message to all suspended responses
 	 *
-	 * @param message
-	 *          The message to push
+	 * @param message The message to push
 	 * @return this instance, for chaining
 	 */
-	public AtmosphereTester post(Object message)
-	{
-		eventBus.post(message);
+	public AtmosphereTester post(Object message) {
+		String response = eventBus.post(message);
+		updateResponse(response);
 		return this;
+	}
+
+	public void updateResponse(final String response) {
+		this.lastResponse = wicketTester.getLastResponse();
+		this.suspendedResponse = this.lastResponse;
 	}
 
 	/**
 	 * Posts a message to the suspended response with the given uuid
 	 *
-	 * @param message
-	 *          The message to push
-	 * @param resourceUuid
-	 *          The identifier of the suspended http response
+	 * @param message      The message to push
+	 * @param resourceUuid The identifier of the suspended http response
 	 * @return this instance, for chaining
 	 */
-	public AtmosphereTester post(Object message, String resourceUuid)
-	{
+	public AtmosphereTester post(Object message, String resourceUuid) {
 		eventBus.post(message, resourceUuid);
 		return this;
 	}
@@ -167,14 +179,13 @@ public class AtmosphereTester
 	/**
 	 * Switches the current <em>lastResponse</em> with the <em>suspendedResponse</em>
 	 * so the application test can use WicketTester's assert methods.
-	 *
+	 * <p>
 	 * Note: Make sure to call {@linkplain #switchOffTestMode()} later to be able to
 	 * assert on non-Atmosphere related responses
 	 *
 	 * @return this instance, for chaining
 	 */
-	public AtmosphereTester switchOnTestMode()
-	{
+	public AtmosphereTester switchOnTestMode() {
 		lastResponse = wicketTester.getLastResponse();
 		wicketTester.setLastResponse(suspendedResponse);
 		return this;
@@ -185,10 +196,8 @@ public class AtmosphereTester
 	 *
 	 * @return this instance, for chaining
 	 */
-	public AtmosphereTester switchOffTestMode()
-	{
-		if (lastResponse != null)
-		{
+	public AtmosphereTester switchOffTestMode() {
+		if (lastResponse != null) {
 			wicketTester.setLastResponse(lastResponse);
 			lastResponse = null;
 		}

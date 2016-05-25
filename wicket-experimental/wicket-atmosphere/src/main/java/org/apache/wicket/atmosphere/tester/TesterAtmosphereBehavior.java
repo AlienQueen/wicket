@@ -21,34 +21,33 @@ import org.apache.wicket.atmosphere.AtmosphereBehavior;
 import org.apache.wicket.atmosphere.EventBus;
 import org.apache.wicket.util.tester.WicketTester;
 import org.atmosphere.cpr.AtmosphereRequest;
+import org.atmosphere.cpr.AtmosphereRequestImpl;
 import org.atmosphere.cpr.AtmosphereResource;
 import org.atmosphere.cpr.AtmosphereResourceImpl;
 import org.atmosphere.cpr.AtmosphereResponse;
+import org.atmosphere.cpr.AtmosphereResponseImpl;
 import org.atmosphere.handler.AtmosphereHandlerAdapter;
 
 /**
  * A specialization that doesn't use Meteor to create AtmosphereResource
  * but creates it manually by using the WicketTester's http request and response
  */
-class TesterAtmosphereBehavior extends AtmosphereBehavior
-{
+class TesterAtmosphereBehavior extends AtmosphereBehavior {
 	private final EventBus eventBus;
 	private final WicketTester wicketTester;
 
-	TesterAtmosphereBehavior(WicketTester wicketTester, EventBus eventBus)
-	{
+	TesterAtmosphereBehavior(WicketTester wicketTester, EventBus eventBus) {
 		this.wicketTester = wicketTester;
 		this.eventBus = eventBus;
 	}
 
 	@Override
-	public void onRequest()
-	{
-		TesterBroadcaster broadcaster = (TesterBroadcaster) eventBus.getBroadcaster();
+	public void onRequest() {
+		TesterBroadcaster broadcaster = (TesterBroadcaster) this.eventBus.getBroadcaster();
 
 		AtmosphereResource atmosphereResource = new AtmosphereResourceImpl();
-		AtmosphereRequest atmosphereRequest = AtmosphereRequest.wrap(wicketTester.getRequest());
-		AtmosphereResponse atmosphereResponse = AtmosphereResponse.wrap(wicketTester.getResponse());
+		AtmosphereRequest atmosphereRequest = new AtmosphereRequestImpl.Builder().request(wicketTester.getRequest()).build();
+		AtmosphereResponse atmosphereResponse = new AtmosphereResponseImpl.Builder().response(wicketTester.getResponse()).build();
 		TesterAsyncSupport asyncSupport = new TesterAsyncSupport();
 		atmosphereResource.initialize(broadcaster.getApplicationConfig(), broadcaster, atmosphereRequest, atmosphereResponse,
 				asyncSupport, new AtmosphereHandlerAdapter());

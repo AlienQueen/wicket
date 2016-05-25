@@ -16,21 +16,19 @@
  */
 package org.apache.wicket.atmosphere;
 
-import java.util.List;
-
 import org.apache.wicket.markup.head.HeaderItem;
 import org.apache.wicket.markup.head.JavaScriptHeaderItem;
+import org.apache.wicket.request.resource.JavaScriptResourceReference;
 import org.apache.wicket.resource.JQueryPluginResourceReference;
 
-import de.agilecoders.wicket.webjars.request.resource.WebjarsJavaScriptResourceReference;
+import java.util.List;
 
 /**
  * Resource reference for the jquery.atmosphere.js module and the wicket glue.
- * 
+ *
  * @author papegaaij
  */
-public class JQueryWicketAtmosphereResourceReference extends JQueryPluginResourceReference
-{
+public class JQueryWicketAtmosphereResourceReference extends JQueryPluginResourceReference {
 	private static final long serialVersionUID = 1L;
 
 	private static final JQueryWicketAtmosphereResourceReference INSTANCE = new JQueryWicketAtmosphereResourceReference();
@@ -38,21 +36,18 @@ public class JQueryWicketAtmosphereResourceReference extends JQueryPluginResourc
 	/**
 	 * @return the singleton instance of this resource reference.
 	 */
-	public static JQueryWicketAtmosphereResourceReference get()
-	{
+	public static JQueryWicketAtmosphereResourceReference get() {
 		return INSTANCE;
 	}
 
-	private JQueryWicketAtmosphereResourceReference()
-	{
+	private JQueryWicketAtmosphereResourceReference() {
 		super(JQueryWicketAtmosphereResourceReference.class, "jquery.wicketatmosphere.js");
 	}
 
 	@Override
-	public List<HeaderItem> getDependencies()
-	{
+	public List<HeaderItem> getDependencies() {
 		List<HeaderItem> dependencies = super.getDependencies();
-		WebjarsJavaScriptResourceReference jqueryAtmosphereReference = new WebjarsJavaScriptResourceReference("jquery-atmosphere/current/jquery.atmosphere.js");
+		JavaScriptResourceReference jqueryAtmosphereReference = new JavaScriptResourceReference(AtmosphereBehavior.class, "atmosphere.js");
 		dependencies.add(JavaScriptHeaderItem.forReference(jqueryAtmosphereReference));
 		return dependencies;
 	}

@@ -21,7 +21,7 @@ import org.apache.wicket.util.lang.Args;
 
 /**
  * Identifies a page by its id and the session it belongs to.
- * 
+ *
  * @author papegaaij
  */
 public class PageKey
@@ -32,7 +32,7 @@ public class PageKey
 
 	/**
 	 * Construct.
-	 * 
+	 *
 	 * @param pageId
 	 * @param sessionId
 	 */

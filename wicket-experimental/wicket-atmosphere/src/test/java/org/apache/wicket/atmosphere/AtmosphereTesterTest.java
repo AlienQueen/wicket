@@ -65,6 +65,7 @@ public class AtmosphereTesterTest extends Assert
 			}
 		};
 
+		tester.startPage(page);
 		AtmosphereTester waTester = new AtmosphereTester(tester, page);
 
 		assertThat(updateTimeCalled.get(), is(false));

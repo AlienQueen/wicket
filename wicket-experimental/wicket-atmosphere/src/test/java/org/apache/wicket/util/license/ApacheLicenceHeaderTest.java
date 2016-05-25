@@ -21,15 +21,14 @@ package org.apache.wicket.util.license;
  * {@link org.apache.wicket.util.license.ApacheLicenseHeaderTestCase}, but you can add project
  * specific tests here if needed.
  */
-public class ApacheLicenceHeaderTest extends ApacheLicenseHeaderTestCase
-{
+public class ApacheLicenceHeaderTest extends ApacheLicenseHeaderTestCase {
 	/**
 	 * Construct.
 	 */
-	public ApacheLicenceHeaderTest()
-	{
+	public ApacheLicenceHeaderTest() {
 		// addHeaders = true;
 
 		javaScriptIgnore.add("src/main/java/org/apache/wicket/atmosphere/jquery.atmosphere.js");
+		xmlIgnore.add(".idea");
 	}
 }
